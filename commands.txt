@@ -1,0 +1,127 @@
+bin/kafka-topics --bootstrap-server namenode:9093 --delete --topic greetings
+bin/kafka-topics --bootstrap-server namenode:9093 --delete --topic products
+
+Run kafka and zookeeper server
+nohup /data/confluent/bin/zookeeper-server-start /data/confluent/etc/kafka/zookeeper.properties &
+nohup /data/confluent/bin/kafka-server-start /data/confluent/etc/kafka/server.properties &
+nohup /data/confluent/bin/ksql-server-start etc/ksqldb/ksql-server.properties &
+nohup /data/confluent/bin/schema-registry-start /data/confluent/etc/schema-registry/schema-registry.properties &
+
+
+Activate Virtual Environment
+	source /data/airflow/airflow_venv/bin/activate
+
+List topics
+	bin/kafka-topics --bootstrap-server namenode:9093 --list
+
+Delete topics
+	bin/kafka-topics --bootstrap-server namenode:9093 --delete --topic products
+
+Create topic
+	bin/kafka-topics --bootstrap-server namenode:9093 --create --topic greetings
+
+Create Producer
+	bin/kafka-console-producer --bootstrap-server namenode:9093 --topic greetings
+
+Create Consumer
+	bin/kafka-console-consumer --bootstrap-server namenode:9093 --topic greetings --from-beginning
+
+
+Create Avro Producer
+	bin/kafka-avro-console-producer  --bootstrap-server namenode:9093 --topic products \
+	--property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"id","type":"int"},{"name":"product", "type": "string"}]}'
+
+
+Create Avro Consumer
+	bin/kafka-avro-console-consumer --bootstrap-server namenode:9093 --topic products_demo --from-beginning
+
+
+Source Connector
+	vi /data/confluent/etc/kafka/connect-mysql.properties
+	Provide topic name
+
+	CLASSPATH=/data/confluent/share/kafka/plugins/lib/mysql-connector-java-8.0.22.jar bin/connect-standalone \
+	etc/kafka/connect-standalone.properties etc/kafka/connect-mysql.properties
+
+
+	bin/kafka-console-consumer --bootstrap-server namenode:9093 --topic employees --from-beginning
+
+	We can verify creation of topic from ksql as well
+	bin/ksql
+	list topics;
+	print employees from beginning;
+
+
+
+Sink Connector
+	vi  etc/kafka/connect-mysql-sink.properties
+	Provide topic name
+
+	CLASSPATH=/data/confluent/share/kafka/plugins/lib/mysql-connector-java-8.0.22.jar \
+	bin/connect-standalone etc/kafka/connect-standalone-sink.properties etc/kafka/connect-mysql-sink.properties
+
+
+
+Topic from file
+	vi /data/file_name.txt
+	vi etc/kafka/connect-file-source.properties
+
+	bin/connect-standalone etc/kafka/connect-standalone.properties etc/kafka/connect-file-source.properties
+
+
+	bin/kafka-console-consumer --bootstrap-server namenode:9093 --topic file_demo --from-beginning
+
+
+
+
+Kafka Python
+	Producer Hello as message
+		vi python_codes/producer_hello.py
+		python python_codes/producer_hello.py
+		bin/kafka-console-consumer --bootstrap-server namenode:9093 --topic hello --from-beginning
+
+
+	Producer Example II
+		vi python_codes/producer_numtest.py
+		python python_codes/producer_numtest.py
+
+		bin/kafka-console-consumer --bootstrap-server namenode:9093 --topic numtest --from-beginning
+
+
+
+	Producer Example III
+		vi python_codes/python_mysql.py
+		python python_codes/python_mysql.py
+
+		bin/kafka-console-consumer --bootstrap-server namenode:9093 --topic python_employee --from-beginning
+
+
+
+Kakfa Consumer 
+	vi python_codes/consumer_mysql.py
+	python python_codes/consumer_mysql.py
+
+
+
+Oracle as Source and Mysql as sink connector
+	vi /data/confluent/etc/kafka/connect-oracle-source.properties
+
+	CLASSPATH=/data/confluent/share/kafka/plugins/lib/ojdbc7.jar \
+	bin/connect-standalone etc/kafka/connect-standalone.properties etc/kafka/connect-oracle-source.properties
+
+	bin/kafka-console-consumer --bootstrap-server namenode:9093 --topic control_total --from-beginning
+	
+	vi python_codes/consumer_table2.py
+	python python_codes/consumer_table2.py
+
+	INSERT INTO CONTROL_TOTAL (TABLE_NAME,METRIC,VALUE) VALUES('ACCOUNT_MASTER','NULL_COUNT',10);
+	INSERT INTO CONTROL_TOTAL (TABLE_NAME,METRIC,VALUE) VALUES('TRANSACTION_BASE','NULL_COUNT',20);
+	INSERT INTO CONTROL_TOTAL (TABLE_NAME,METRIC,VALUE) VALUES('BALANCE_SUMMARY','NULL_COUNT',30);
+
+CREATE TABLE CONTROL_TOTAL
+(
+    ID integer  default customers_seq.nextval PRIMARY KEY,
+    TABLE_NAME    VARCHAR2(4000) NOT NULL,
+    METRIC    VARCHAR2(4000) NOT NULL,
+    VALUE    FLOAT NOT NULL-- CONSTRAINT qname_uk UNIQUE
+);
